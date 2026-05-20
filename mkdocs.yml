@@ -20,4 +20,7 @@ nav:
       - Hydrogen Bonds: analysis/hbond.md
 
 theme:
-  name: mkdocs
+  name: readthedocs
+
+extra_css:
+  - stylesheets/extra.css
