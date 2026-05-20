@@ -13,4 +13,6 @@ dependencies:
   - openpyxl
   - tqdm
   - imageio
+  - mkdocs
+  - mkdocs-material
 prefix: /nas/longleaf/home/emainas/.conda/envs/mlip
