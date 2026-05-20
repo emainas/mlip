@@ -1,0 +1,23 @@
+site_name: mlip
+site_description: Lightweight workflows for ML interatomic potential simulations
+site_url: https://emainas.github.io/mlip/
+repo_url: https://github.com/emainas/mlip
+repo_name: emainas/mlip
+
+nav:
+  - Home: index.md
+  - Workflow:
+      - Prep: workflow/prep.md
+      - Equilibration: workflow/mdequil.md
+      - Salt: workflow/salt.md
+      - Density: workflow/density.md
+      - MLIP Runs: workflow/mlip.md
+  - Analysis:
+      - RDF: analysis/rdf.md
+      - Dihedral: analysis/dihedral.md
+      - RMSD: analysis/rmsd.md
+      - Radius of Gyration: analysis/radgyr.md
+      - Hydrogen Bonds: analysis/hbond.md
+
+theme:
+  name: mkdocs
