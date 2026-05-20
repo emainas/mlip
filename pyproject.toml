@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlip"
+version = "0.1.0"
+description = "Lightweight workflows for ML interatomic potentials (Amber prep, MLIP runs, Slurm submission)"
+requires-python = ">=3.11"
+dependencies = ["pyyaml"]
+
+[project.scripts]
+mlip = "mlip.cli:main"
