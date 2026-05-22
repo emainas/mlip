@@ -5,12 +5,12 @@ from mlip.prep import run_prep
 from mlip.mdequil import run_mdequil
 from mlip.salt import run_salt
 from mlip.density import run_density
-from mlip.mlip import run_mlip_prep, run_mlip_submit
 from mlip.rdf import run_rdf
 from mlip.dihedral import run_dihedral
 from mlip.rmsd import run_rmsd
 from mlip.radgyr import run_radgyr
 from mlip.hbond import run_hbond
+from mlip.orb import run_orb_prep, run_orb_submit
 
 
 def main():
@@ -29,11 +29,11 @@ def main():
     density = sub.add_parser("density", help="Compute solute/box volume from salt outputs")
     density.add_argument("yaml", type=Path)
 
-    mlip_prep = sub.add_parser("mlip-prep", help="Write MLIP (ORB) equil inputs/scripts (no submit)")
-    mlip_prep.add_argument("yaml", type=Path)
+    orb_prep = sub.add_parser("orb-prep", help="Write ORB equil inputs/scripts (no submit)")
+    orb_prep.add_argument("yaml", type=Path)
 
-    mlip_submit = sub.add_parser("mlip-submit", help="Submit MLIP (ORB) equil jobs for runs matching the config")
-    mlip_submit.add_argument("yaml", type=Path)
+    orb_submit = sub.add_parser("orb-submit", help="Submit ORB equil jobs for runs matching the config")
+    orb_submit.add_argument("yaml", type=Path)
 
     rdf = sub.add_parser("rdf", help="Compute RDF with cpptraj for selected runs")
     rdf.add_argument("yaml", type=Path)
@@ -60,10 +60,10 @@ def main():
         run_salt(args.yaml)
     elif args.cmd == "density":
         run_density(args.yaml)
-    elif args.cmd == "mlip-prep":
-        run_mlip_prep(args.yaml)
-    elif args.cmd == "mlip-submit":
-        run_mlip_submit(args.yaml)
+    elif args.cmd == "orb-prep":
+        run_orb_prep(args.yaml)
+    elif args.cmd == "orb-submit":
+        run_orb_submit(args.yaml)
     elif args.cmd == "rdf":
         run_rdf(args.yaml)
     elif args.cmd == "dihedral":

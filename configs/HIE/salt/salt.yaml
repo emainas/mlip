@@ -1,0 +1,9 @@
+system: HIE
+buffer: 4.5
+prefix: solv
+input_source: prep
+
+counterion:
+solute_mask: ":1"
+nclosest: 999999
+delete_h: "H1,H2,O"   # or H2

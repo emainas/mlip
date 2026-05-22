@@ -1,0 +1,22 @@
+# Only used when start_from: xyz
+start_from: xyz
+xyz: systems/biliverdin-microstates/APP-ZZZass/init/bv.xyz
+template_mol2: systems/biliverdin-microstates/APP-ZZZsss/init/app.mol2
+template_frcmod: systems/biliverdin-microstates/APP-ZZZsss/init/app.frcmod   # optional; if exists, skip parmchk2
+charge: 0
+charge_method: abcg2
+resname: APP
+
+# tleap options
+name: APP-ZZZass
+leaprc_mol: leaprc.gaff2
+leaprc_sol: leaprc.water.tip3p
+frcmod_ion: frcmod.ionsjc_tip3p
+frcmod: app.frcmod
+mol2: app.mol2
+water_model: TIP3PBOX
+buffer: 6.5
+counterion: 
+counterion_num: 0
+input_dir: systems/biliverdin-microstates/APP-ZZZass/init/
+prefix: solv

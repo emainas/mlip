@@ -41,11 +41,11 @@ class RuntimeConfig:
 
 
 @dataclass(frozen=True, slots=True)
-class MlipPrepConfig:
+class OrbPrepConfig:
     system: str
     buffer: float
     prefix: str
-    mlip_dirname: str
+    orb_dirname: str
     input_source: str
     input_name: str
     salt_dirname: str
@@ -66,12 +66,12 @@ def find_repo_root(start: Path) -> Path:
     raise RuntimeError(f"Could not find repo root (pyproject.toml) starting from {start}")
 
 
-def system_base_dir(cfg: MlipPrepConfig, repo_root: Path) -> Path:
+def system_base_dir(cfg: OrbPrepConfig, repo_root: Path) -> Path:
     return repo_root / "systems" / cfg.system / f"{cfg.prefix}_{cfg.buffer:.1f}"
 
 
-def mlip_root_dir(cfg: MlipPrepConfig, repo_root: Path) -> Path:
-    return system_base_dir(cfg, repo_root) / cfg.mlip_dirname
+def orb_root_dir(cfg: OrbPrepConfig, repo_root: Path) -> Path:
+    return system_base_dir(cfg, repo_root) / cfg.orb_dirname
 
 
 def bench_tag_from_slurm(slurm_cfg: SlurmConfig) -> str:
@@ -79,17 +79,17 @@ def bench_tag_from_slurm(slurm_cfg: SlurmConfig) -> str:
     return f"N{job.nodes}T{job.ntasks}C{job.cpus_per_task}"
 
 
-def out_dir(cfg: MlipPrepConfig, repo_root: Path) -> Path:
+def out_dir(cfg: OrbPrepConfig, repo_root: Path) -> Path:
     if cfg.bench_tag:
         tag = cfg.bench_tag
     elif cfg.slurm is not None:
         tag = bench_tag_from_slurm(cfg.slurm)
     else:
         tag = "N1T1C1"
-    return mlip_root_dir(cfg, repo_root) / tag
+    return orb_root_dir(cfg, repo_root) / tag
 
 
-def load_config(yaml_path: Path) -> MlipPrepConfig:
+def load_config(yaml_path: Path) -> OrbPrepConfig:
     data = yaml.safe_load(yaml_path.read_text())
 
     runtime_cfg = RuntimeConfig(**data["runtime"])
@@ -98,11 +98,11 @@ def load_config(yaml_path: Path) -> MlipPrepConfig:
     if data.get("slurm") is not None:
         slurm_cfg = SlurmConfig(job=SlurmJobConfig(**data["slurm"]["job"]))
 
-    return MlipPrepConfig(
+    return OrbPrepConfig(
         system=data["system"],
         buffer=float(data["buffer"]),
         prefix=data.get("prefix", "solv"),
-        mlip_dirname=data.get("mlip_dirname", "mlip"),
+        orb_dirname=data.get("orb_dirname", "orb"),
         input_source=str(data.get("input_source", "salt")),
         input_name=str(data.get("input_name", "ready.xyz")),
         salt_dirname=data.get("salt_dirname", "salt"),
@@ -116,7 +116,7 @@ def load_config(yaml_path: Path) -> MlipPrepConfig:
     )
 
 
-def input_dir(cfg: MlipPrepConfig, repo_root: Path) -> Path:
+def input_dir(cfg: OrbPrepConfig, repo_root: Path) -> Path:
     base = system_base_dir(cfg, repo_root)
     src = cfg.input_source.lower()
     if src == "density":
@@ -126,14 +126,14 @@ def input_dir(cfg: MlipPrepConfig, repo_root: Path) -> Path:
     raise RuntimeError(f"Unknown input_source: {cfg.input_source!r} (expected 'salt' or 'density')")
 
 
-def validate_inputs(cfg: MlipPrepConfig, repo_root: Path) -> None:
+def validate_inputs(cfg: OrbPrepConfig, repo_root: Path) -> None:
     src_dir = input_dir(cfg, repo_root)
     xyz = src_dir / cfg.input_name
     if not xyz.exists() or xyz.stat().st_size == 0:
         raise RuntimeError(f"Missing/empty required input XYZ: {xyz}")
 
 
-def write_run_sh(cfg: MlipPrepConfig, out_dir_path: Path) -> Path:
+def write_run_sh(cfg: OrbPrepConfig, out_dir_path: Path) -> Path:
     sh_path = out_dir_path / "run.sh"
     strict = "set -euo pipefail" if cfg.runtime.strict_mode else ""
     env_lines = "\n".join([f'export {k}="{v}"' for k, v in cfg.runtime.env.items()])
@@ -434,7 +434,7 @@ def _sbatch_line(value: str) -> str:
     return f"#SBATCH {value}"
 
 
-def write_slurm_sh(cfg: MlipPrepConfig, out_dir_path: Path) -> Optional[Path]:
+def write_slurm_sh(cfg: OrbPrepConfig, out_dir_path: Path) -> Optional[Path]:
     if cfg.slurm is None:
         return None
 
@@ -506,7 +506,7 @@ def matching_run_dirs(bench_dir: Path, replica_dirname: str, yaml_text: str) -> 
     return matches
 
 
-def write_single_run(cfg: MlipPrepConfig, repo_root: Path, out_path: Path, yaml_text: str) -> None:
+def write_single_run(cfg: OrbPrepConfig, repo_root: Path, out_path: Path, yaml_text: str) -> None:
     out_path.mkdir(parents=True, exist_ok=True)
     (out_path / "spec.yaml").write_text(yaml_text)
 
@@ -517,7 +517,7 @@ def write_single_run(cfg: MlipPrepConfig, repo_root: Path, out_path: Path, yaml_
     print(f"OK: wrote {run_sh.name}" + (f", {slurm_sh.name}" if slurm_sh else "") + f" in {out_path}")
 
 
-def run_mlip_prep(yaml_path: Path) -> None:
+def run_orb_prep(yaml_path: Path) -> None:
     cfg = load_config(yaml_path)
     repo_root = find_repo_root(yaml_path)
     validate_inputs(cfg, repo_root)
@@ -547,7 +547,7 @@ def run_mlip_prep(yaml_path: Path) -> None:
         print(f"SKIP: {len(skipped)} existing equil dirs (not touched)")
 
 
-def run_mlip_submit(yaml_path: Path) -> None:
+def run_orb_submit(yaml_path: Path) -> None:
     cfg = load_config(yaml_path)
     repo_root = find_repo_root(yaml_path)
     bench_dir = out_dir(cfg, repo_root)
