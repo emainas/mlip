@@ -49,7 +49,6 @@ class OrbPrepConfig:
     input_source: str
     input_name: str
     salt_dirname: str
-    density_dirname: str
     runtime: RuntimeConfig
     slurm: Optional[SlurmConfig] = None
     replicas: int = 1
@@ -106,7 +105,6 @@ def load_config(yaml_path: Path) -> OrbPrepConfig:
         input_source=str(data.get("input_source", "salt")),
         input_name=str(data.get("input_name", "ready.xyz")),
         salt_dirname=data.get("salt_dirname", "salt"),
-        density_dirname=data.get("density_dirname", "density"),
         runtime=runtime_cfg,
         slurm=slurm_cfg,
         replicas=int(data.get("replicas", 1)),
@@ -119,11 +117,9 @@ def load_config(yaml_path: Path) -> OrbPrepConfig:
 def input_dir(cfg: OrbPrepConfig, repo_root: Path) -> Path:
     base = system_base_dir(cfg, repo_root)
     src = cfg.input_source.lower()
-    if src == "density":
-        return base / cfg.density_dirname
     if src == "salt":
         return base / cfg.salt_dirname
-    raise RuntimeError(f"Unknown input_source: {cfg.input_source!r} (expected 'salt' or 'density')")
+    raise RuntimeError(f"Unknown input_source: {cfg.input_source!r} (expected 'salt')")
 
 
 def validate_inputs(cfg: OrbPrepConfig, repo_root: Path) -> None:
@@ -222,7 +218,6 @@ class OrbEquilConfig:
     input_source: str
     input_name: str
     salt_dirname: str
-    density_dirname: str
     md: MDConfig
     output: OutputConfig
     orb: OrbModelConfig
@@ -245,11 +240,9 @@ def system_base_dir(cfg: OrbEquilConfig, repo_root: Path) -> Path:
 def input_dir(cfg: OrbEquilConfig, repo_root: Path) -> Path:
     base = system_base_dir(cfg, repo_root)
     src = cfg.input_source.lower()
-    if src == "density":
-        return base / cfg.density_dirname
     if src == "salt":
         return base / cfg.salt_dirname
-    raise RuntimeError(f"Unknown input_source: {cfg.input_source!r} (expected 'salt' or 'density')")
+    raise RuntimeError(f"Unknown input_source: {cfg.input_source!r} (expected 'salt')")
 
 
 def steps_from_ps(ps: float, dt_fs: float) -> int:
@@ -315,7 +308,6 @@ def load_config(yaml_path: Path) -> OrbEquilConfig:
         input_source=str(data.get("input_source", "salt")),
         input_name=str(data.get("input_name", "ready.xyz")),
         salt_dirname=data.get("salt_dirname", "salt"),
-        density_dirname=data.get("density_dirname", "density"),
         md=MDConfig(
             T=float(_req(md, "T")),
             dt_fs=float(_req(md, "dt_fs")),

@@ -2,7 +2,6 @@ README.md
 pyproject.toml
 src/mlip/__init__.py
 src/mlip/cli.py
-src/mlip/density.py
 src/mlip/dihedral.py
 src/mlip/hbond.py
 src/mlip/mdequil.py

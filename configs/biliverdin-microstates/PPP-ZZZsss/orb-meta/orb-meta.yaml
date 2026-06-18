@@ -1,0 +1,51 @@
+system: biliverdin-microstates/PPP-ZZZsss
+buffer: 6.5
+prefix: solv
+
+method_dir: orb
+bench_tag: N1T1C4
+run_ids: "1"
+cv_dir: meta-hib
+traj_name: traj.xyz
+replica_dir: equil
+
+md:
+  T: 300
+  dt_fs: 0.5            # must match cv.dt_fs
+  friction_per_fs: 0.01
+  prod_ps: 40.0
+
+output:
+  log_stride: 20
+  traj_stride: 20
+
+orb:
+  model: orb_v3_conservative_omol
+  precision: float32-high
+  compile: false
+  charge: 0
+  spin: 1
+  device: auto
+
+runtime:
+  module: anaconda
+  conda_env: orb
+  python: python
+  env:
+    OMP_NUM_THREADS: 4
+    PLUMED_KERNEL: "/path/to/env/lib/libplumedKernel.so"
+  strict_mode: true
+
+slurm:
+  job:
+    name: meta-hib
+    partition: l40-gpu
+    nodes: 1
+    ntasks: 1
+    cpus_per_task: 4
+    mem: 50G
+    time: 1-00:00:00
+    stdout: meta.%j.out
+    stderr: meta.%j.err
+    gres: gpu:1
+    qos: gpu_access

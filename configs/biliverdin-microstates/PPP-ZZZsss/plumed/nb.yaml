@@ -1,0 +1,27 @@
+system: biliverdin-microstates/PPP-ZZZsss
+buffer: 6.5
+prefix: solv
+
+method_dir: orb
+bench_tag: N1T1C4
+run_ids: "1"
+cv_dir: meta-hib
+traj_name: traj.xyz
+
+cv:
+  dt_fs: 0.5                 # must match orb-meta md.dt_fs
+  refdist: 1.6
+  nexp: 6
+  mexp: 12
+  norm: AVERAGE
+
+metadynamics:
+  gausswidth: 0.1
+  metaheight_hartree: 5e-4  # converted to eV internally
+  metafreq_fs: 40.0         # -> PACE = 80 at dt_fs=0.5
+  colvar_stride_fs: 20.0
+  grid_min: 0.0
+  grid_max: 1.0
+  grid_step: 0.01
+  group1: { mode: indices, indices: [19] }
+  group2: { mode: indices, indices: [20] }

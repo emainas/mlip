@@ -4,13 +4,14 @@ from pathlib import Path
 from mlip.prep import run_prep
 from mlip.mdequil import run_mdequil
 from mlip.salt import run_salt
-from mlip.density import run_density
 from mlip.rdf import run_rdf
 from mlip.dihedral import run_dihedral
 from mlip.rmsd import run_rmsd
 from mlip.radgyr import run_radgyr
 from mlip.hbond import run_hbond
 from mlip.orb import run_orb_prep, run_orb_submit
+from mlip.plumed import run_cv
+from mlip.orb_meta import run_orb_meta_prep, run_orb_meta_submit
 
 
 def main():
@@ -26,8 +27,6 @@ def main():
     salt = sub.add_parser("salt", help="Delete the counterion and turn the furthest water into a hydroxide")
     salt.add_argument("yaml", type=Path)
 
-    density = sub.add_parser("density", help="Compute solute/box volume from salt outputs")
-    density.add_argument("yaml", type=Path)
 
     orb_prep = sub.add_parser("orb-prep", help="Write ORB equil inputs/scripts (no submit)")
     orb_prep.add_argument("yaml", type=Path)
@@ -50,6 +49,15 @@ def main():
     hbond = sub.add_parser("hbond", help="Compute hydrogen bond time series and lifetimes with cpptraj")
     hbond.add_argument("yaml", type=Path)
 
+    plumed = sub.add_parser("plumed", help="Write plumed.dat for selected runs")
+    plumed.add_argument("yaml", type=Path)
+
+    orb_meta_prep = sub.add_parser("orb-meta-prep", help="Write ORB+PLUMED meta inputs/scripts (no submit)")
+    orb_meta_prep.add_argument("yaml", type=Path)
+
+    orb_meta_submit = sub.add_parser("orb-meta-submit", help="Submit ORB+PLUMED meta runs for matching configs")
+    orb_meta_submit.add_argument("yaml", type=Path)
+
     args = p.parse_args()
 
     if args.cmd == "prep":
@@ -58,8 +66,6 @@ def main():
         run_mdequil(args.yaml)
     elif args.cmd == "salt":
         run_salt(args.yaml)
-    elif args.cmd == "density":
-        run_density(args.yaml)
     elif args.cmd == "orb-prep":
         run_orb_prep(args.yaml)
     elif args.cmd == "orb-submit":
@@ -74,6 +80,12 @@ def main():
         run_radgyr(args.yaml)
     elif args.cmd == "hbond":
         run_hbond(args.yaml)
+    elif args.cmd == "plumed":
+        run_cv(args.yaml)
+    elif args.cmd == "orb-meta-prep":
+        run_orb_meta_prep(args.yaml)
+    elif args.cmd == "orb-meta-submit":
+        run_orb_meta_submit(args.yaml)
 
 
 if __name__ == "__main__":
