@@ -16,11 +16,17 @@ class PrepConfig:
     name: str
     leaprc_mol: str
     leaprc_sol: str
-    frcmod: Path
-    mol2: Path
+    frcmod: Optional[Path]
+    mol2: Optional[Path]
     water_model: str
     buffer: float
     input_dir: Path
+    pdb: Optional[Path] = None
+    prep_files: tuple[Path, ...] = ()
+    extra_frcmods: tuple[Path, ...] = ()
+    tleap_commands: tuple[str, ...] = ()
+    ion_1264_mask: Optional[str] = None
+    ion_1264_watermodel: Optional[str] = None
     xyz: Optional[Path] = None
     template_mol2: Optional[Path] = None
     template_frcmod: Optional[Path] = None
@@ -41,13 +47,13 @@ def load_config(yaml_path: Path) -> PrepConfig:
         name=data["name"],
         leaprc_mol=data["leaprc_mol"],
         leaprc_sol=data["leaprc_sol"],
-        frcmod_ion=data["frcmod_ion"],
-        frcmod=Path(data["frcmod"]),
-        mol2=Path(data["mol2"]),
+        frcmod_ion=data.get("frcmod_ion"),
+        frcmod=Path(data["frcmod"]) if data.get("frcmod") else None,
+        mol2=Path(data["mol2"]) if data.get("mol2") else None,
         water_model=data.get("water_model"),
         buffer=float(data.get("buffer")),
         counterion=data.get("counterion"),
-        counterion_num=int(data.get("counterion_num")),
+        counterion_num=int(data.get("counterion_num", 0)),
         input_dir=Path(data["input_dir"]),
         prefix=data.get("prefix", "solv"),
         xyz=Path(data["xyz"]).expanduser() if data.get("xyz") else None,
@@ -56,6 +62,12 @@ def load_config(yaml_path: Path) -> PrepConfig:
         charge=int(data["charge"]) if data.get("charge") is not None else None,
         charge_method=data.get("charge_method"),
         resname=data.get("resname"),
+        pdb=Path(data["pdb"]) if data.get("pdb") else None,
+        prep_files=tuple(Path(value) for value in data.get("prep_files", [])),
+        extra_frcmods=tuple(Path(value) for value in data.get("extra_frcmods", [])),
+        tleap_commands=tuple(str(value) for value in data.get("tleap_commands", [])),
+        ion_1264_mask=data.get("ion_1264_mask"),
+        ion_1264_watermodel=data.get("ion_1264_watermodel"),
     )
 
     return cfg
@@ -414,18 +426,23 @@ def write_tleap_in(cfg: PrepConfig) -> Path:
     prep_dir = base_dir / f"{cfg.prefix}_{cfg.buffer:.1f}" / "prep"
     prep_dir.mkdir(parents=True, exist_ok=True)
 
-    frcmod_name = cfg.frcmod.name
-    mol2_name = cfg.mol2.name
+    frcmod_name = cfg.frcmod.name if cfg.frcmod else None
+    mol2_name = cfg.mol2.name if cfg.mol2 else None
 
-    frcmod_src = cfg.input_dir / frcmod_name
-    mol2_src = cfg.input_dir / mol2_name
+    frcmod_src = cfg.input_dir / frcmod_name if frcmod_name else None
+    mol2_src = cfg.input_dir / mol2_name if mol2_name else None
     
     # Existence of input checks
     if cfg.start_from == "mol2":
+        if not frcmod_src or not mol2_src:
+            raise ValueError("frcmod and mol2 are required for start_from: mol2")
         if not frcmod_src.exists():
             raise FileNotFoundError(f"Missing in input_dir: {frcmod_src}")
         if not mol2_src.exists():
             raise FileNotFoundError(f"Missing in input_dir: {mol2_src}")
+    elif cfg.start_from == "pdb":
+        if not cfg.pdb:
+            raise ValueError("pdb is required for start_from: pdb")
     
     # Copy inputs to prep dir to run tleap in
     if cfg.start_from == "mol2":
@@ -442,6 +459,17 @@ def write_tleap_in(cfg: PrepConfig) -> Path:
             shutil.copy2(cfg.template_frcmod, prep_dir / frcmod_name)
         else:
             run_antechamber(cfg, prep_dir)
+    elif cfg.start_from == "pdb":
+        pdb_src = cfg.pdb if cfg.pdb.is_absolute() else cfg.input_dir / cfg.pdb
+        if not pdb_src.exists():
+            raise FileNotFoundError(f"Missing PDB input: {pdb_src}")
+        shutil.copy2(pdb_src, prep_dir / pdb_src.name)
+
+        for path in (*cfg.prep_files, *cfg.extra_frcmods):
+            source = path if path.is_absolute() else cfg.input_dir / path
+            if not source.exists():
+                raise FileNotFoundError(f"Missing custom parameter input: {source}")
+            shutil.copy2(source, prep_dir / source.name)
     else:
         raise ValueError(f"Unsupported start_from: {cfg.start_from}")
 
@@ -451,6 +479,18 @@ def write_tleap_in(cfg: PrepConfig) -> Path:
     if cfg.counterion_num > 0:
         addions_block = f'addions sys {cfg.counterion} {cfg.counterion_num}\n'
 
+    ion_params = f"loadamberparams {cfg.frcmod_ion}" if cfg.frcmod_ion else ""
+    custom_preps = "\n".join(f"loadamberprep {path.name}" for path in cfg.prep_files)
+    custom_frcmods = "\n".join(f"loadamberparams {path.name}" for path in cfg.extra_frcmods)
+    custom_commands = "\n".join(cfg.tleap_commands)
+
+    if cfg.start_from == "pdb":
+        molecule_load = f"sys = loadpdb {cfg.pdb.name}"
+        molecule_params = ""
+    else:
+        molecule_load = f"sys = loadmol2 {mol2_name}"
+        molecule_params = f"loadamberparams {frcmod_name}"
+
     text = f"""\
 # Auto-generated by mlip prep.py
 # System: {cfg.name}
@@ -458,12 +498,17 @@ def write_tleap_in(cfg: PrepConfig) -> Path:
 source {cfg.leaprc_mol}
 source {cfg.leaprc_sol}
 
-# Ions (Joung-Cheatham for TIP3P)
-loadamberparams {cfg.frcmod_ion}
+# Water-compatible ion parameters
+{ion_params}
 
-# Molecule params
-loadamberparams {frcmod_name}
-sys = loadmol2 {mol2_name}
+# Molecule and custom residue parameters
+{molecule_params}
+{custom_preps}
+{custom_frcmods}
+{molecule_load}
+
+# Optional topology edits (for example, disulfide bonds)
+{custom_commands}
 
 # Solvate (buffer in Angstrom)
 solvatebox sys {cfg.water_model} {cfg.buffer}
@@ -516,12 +561,44 @@ def run_tleap(cfg: PrepConfig, tleap_in: Path) -> None:
             check=True,
         )
 
+
+def add_1264_coefficients(cfg: PrepConfig, prep_dir: Path) -> None:
+    """Add the C4 terms required by Amber's 12-6-4 ion model."""
+    if not cfg.ion_1264_mask:
+        return
+    if not cfg.ion_1264_watermodel:
+        raise ValueError("ion_1264_watermodel is required with ion_1264_mask")
+
+    parm7 = prep_dir / f"{cfg.prefix}.parm7"
+    script = prep_dir / "add1264.parmed"
+    log = prep_dir / "add1264.out"
+    script.write_text(
+        f"add12_6_4 {cfg.ion_1264_mask} watermodel {cfg.ion_1264_watermodel}\n"
+        f"outparm {parm7.name}\n"
+    )
+    parmed = require_ambertools_tool("parmed")
+    amber_env = os.environ.copy()
+    amberhome = Path(os.environ["AMBERHOME"])
+    site_packages = sorted((amberhome / "lib").glob("python*/site-packages"))
+    if site_packages:
+        amber_env["PYTHONPATH"] = str(site_packages[-1])
+    with log.open("w") as f:
+        subprocess.run(
+            [str(parmed), "-O", "-n", "-p", parm7.name, "-i", script.name],
+            cwd=prep_dir,
+            env=amber_env,
+            stdout=f,
+            stderr=subprocess.STDOUT,
+            check=True,
+        )
+
 def run_prep(yaml_path):
     cfg = load_config(yaml_path)
     tleap_in = write_tleap_in(cfg)
     run_tleap(cfg, tleap_in)
 
     prep_dir = tleap_in.parent
+    add_1264_coefficients(cfg, prep_dir)
 
     # Freeze config for reproducibility (in the prep dir)
     (prep_dir / "spec.yaml").write_text(yaml_path.read_text())
@@ -547,6 +624,7 @@ def main() -> None:
     run_tleap(cfg, tleap_in)
 
     prep_dir = tleap_in.parent
+    add_1264_coefficients(cfg, prep_dir)
 
     # Freeze config for reproducibility (in the prep dir)
     (prep_dir / "spec.yaml").write_text(yaml_path.read_text())

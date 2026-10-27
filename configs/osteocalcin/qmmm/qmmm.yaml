@@ -1,0 +1,91 @@
+system: osteocalcin
+output_dir: systems/osteocalcin/solv_10.0/qmmm_md500fs
+overwrite: false
+
+# The 10 ns classical production trajectory from which independent QM/MM
+# snapshots are plucked. Frames are numbered from 1, as in cpptraj.
+mother_run:
+  topology: systems/osteocalcin/solv_10.0/prep/solv.parm7
+  trajectory: systems/osteocalcin/solv_10.0/mdprod10ns/prod.nc
+  expected_frames: 1000
+  selection:
+    mode: evenly_spaced
+    start: 1
+    stop: last
+    count: 10
+
+# Center on the five calcium ions, preserve the complete dimer and calcium
+# sites plus all eight neutralizing sodium ions, and retain complete solvent
+# residues intersecting this sphere.
+sphere:
+  center_residues: [77, 78, 79, 80, 81]
+  radius_angstrom: 28.0
+  always_keep_residue_range: [1, 89]
+
+# Persistent Ca-carboxylate contacts observed during equilibration. The same
+# chemical core is used for every frame. Directly coordinated waters are
+# selected per frame and converted from four-site OPC to three-site TIP3P.
+qm_region:
+  calcium_residues: [77, 78, 79, 80, 81]
+  carboxylate_residues:
+    GLA: [6, 10, 13, 44, 48, 51]
+    ASP: [19, 57]
+  sidechain_atoms:
+    GLA: [CB, CG, CD1, OE1, OE2, CD2, OE3, OE4, HG, HB2, HB3]
+    ASP: [CB, CG, OD1, OD2, HB2, HB3]
+  charge: -4
+  multiplicity: 1
+  expected_atoms: 83
+  expected_link_bonds: 8
+  coordinating_waters:
+    residue_name: WAT
+    oxygen_atom: O
+    cutoff_angstrom: 2.8
+    convert_to: TIP3P
+    expected_count_range: [11, 12]
+
+# Use a non-diffuse polarized basis to avoid near-linear dependence in the
+# large, tightly packed calcium/carboxylate/water QM region.
+terachem:
+  run: md
+  method: b3lyp
+  basis: def2-svp
+  precision: dynamic
+  dftgrid: 2
+  dynamicgrid: "yes"
+  sphericalbasis: "yes"
+  threall: 1.0e-12
+  convthre: 1.0e-6
+  maxit: 500
+  seed_base: 20261026
+  extra:
+    nstep: 1000
+    timestep: 0.5
+    velocities: random
+    tinit: 300.0
+    t0: 300.0
+    thermostat: rescale
+    rescalefreq: 2000
+    md_outputfreq: 1
+    restartmdfreq: 100
+    mdbc: spherical
+    md_density: 1.0
+
+execution:
+  environment: /proj/pierilab/software/tc/25.03/TeraChem/SetTCVars.sh
+  executable: /proj/pierilab/software/tc/25.03/TeraChem/bin/terachem
+  slurm:
+    job_name: osteocalcin-qmmm
+    partition: a100-gpu,volta-gpu,l40-gpu
+    qos: gpu_access
+    gres: gpu:1
+    cpus_per_task: 2
+    mem: 16G
+    time: "15:00:00"
+    max_parallel: 10
+
+known_limitations:
+  - >-
+    TeraChem 25.03 reads Amber Lennard-Jones A/B coefficients but not the C4
+    table. The Ca 12-6-4 terms are preserved in system.parm7 but will not be
+    applied by this TeraChem QM/MM driver.

@@ -10,7 +10,6 @@ nav:
       - Prep: workflow/prep.md
       - Equilibration: workflow/mdequil.md
       - Salt: workflow/salt.md
-      - Density: workflow/density.md
       - MLIP Runs: workflow/mlip.md
   - Analysis:
       - RDF: analysis/rdf.md

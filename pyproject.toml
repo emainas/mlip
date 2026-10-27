@@ -9,5 +9,8 @@ description = "Lightweight workflows for ML interatomic potentials (Amber prep, 
 requires-python = ">=3.11"
 dependencies = ["pyyaml", "ase"]
 
+[project.optional-dependencies]
+docs = ["mkdocs", "mkdocs-material"]
+
 [project.scripts]
 mlip = "mlip.cli:main"

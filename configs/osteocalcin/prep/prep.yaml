@@ -1,0 +1,29 @@
+start_from: pdb
+name: osteocalcin-dimer
+
+leaprc_mol: leaprc.protein.ff19SB
+leaprc_sol: leaprc.water.opc
+frcmod_ion: frcmod.ionslm_1264_opc
+ion_1264_mask: ":CA,Na+"
+ion_1264_watermodel: OPC
+
+input_dir: systems/osteocalcin/init
+pdb: dimer_amber.pdb
+prep_files:
+  - ../params/gla_ff19sb.prepi
+extra_frcmods:
+  - ../params/gla_ff19sb.frcmod
+
+water_model: OPCBOX
+buffer: 10.0
+prefix: solv
+
+# Cys23-Cys29 in each monomer. tleap preserves 23/29 for chain A and
+# renumbers chain B sequentially to 61/67 when the two chains are loaded.
+tleap_commands:
+  - bond sys.23.SG sys.29.SG
+  - bond sys.61.SG sys.67.SG
+
+# Capped dimer (-18) plus five structural Ca2+ ions (+10) gives -8.
+counterion: Na+
+counterion_num: 8

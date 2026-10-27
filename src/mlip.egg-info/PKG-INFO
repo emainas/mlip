@@ -4,3 +4,7 @@ Version: 0.1.0
 Summary: Lightweight workflows for ML interatomic potentials (Amber prep, MLIP runs, Slurm submission)
 Requires-Python: >=3.11
 Requires-Dist: pyyaml
+Requires-Dist: ase
+Provides-Extra: docs
+Requires-Dist: mkdocs; extra == "docs"
+Requires-Dist: mkdocs-material; extra == "docs"

@@ -1,0 +1,87 @@
+schema_name: mlip_qmmm_sample
+schema_version: 1
+sample_id: osteocalcin_frame_0001
+description: >-
+  Completed calcium-centered QM/MM single-point energy calculation for the
+  first selected frame of the 10 ns osteocalcin dimer trajectory.
+
+provenance:
+  project: osteocalcin calcium-site QM/MM study
+  source_structure: calcium-bound osteocalcin dimer
+  source_trajectory: systems/osteocalcin/solv_10.0/mdprod10ns/prod.nc
+  source_topology: systems/osteocalcin/solv_10.0/prep/solv.parm7
+  source_frame: 1
+  trajectory_frames_sampled_in_study: [1, 112, 223, 334, 445, 556, 667, 778, 889, 1000]
+  sample_created: 2026-10-27
+
+classical_model:
+  protein_force_field: Amber ff19SB
+  solvent_model_before_qmmm_preparation: OPC
+  qm_water_model_in_amber_topology: TIP3P
+  calcium_model: Amber-compatible divalent calcium parameters
+  boundary_condition_for_qmmm: nonperiodic
+  crop_geometry: sphere
+  crop_radius_angstrom: 28.0
+  cropped_atom_count: 12383
+  cropped_residue_count: 2888
+  mm_atom_count_reported_by_terachem: 12264
+
+qm_region:
+  selection_file: region.qm
+  index_convention: zero_based
+  selected_atom_count: 119
+  terachem_qm_atom_count_including_links: 127
+  link_atom_count: 8
+  calcium_ion_count: 5
+  first_shell_water_count: 12
+  protein_ligands: GLA and ASP carboxylate side chains contacting calcium
+  total_charge_e: -4
+  multiplicity: 1
+
+calculation:
+  engine: TeraChem
+  version: "25.03 (v1.96H-beta-250307)"
+  run_type: single_point_energy
+  method: B3LYP
+  basis: def2-SVP
+  spherical_basis: true
+  dft_grid: 2
+  dynamic_grid: true
+  precision: dynamic
+  scf_energy_convergence_hartree: 1.0e-6
+  integral_threshold: 1.0e-12
+  maximum_scf_iterations: 500
+
+execution:
+  scheduler_job: 6805266_0
+  node: g0303
+  gpu: Tesla V100-SXM2-16GB
+  gpu_count: 1
+  cpu_count: 2
+  requested_memory_gb: 16
+  started: 2026-10-26T23:10:03-04:00
+  finished: 2026-10-26T23:11:35-04:00
+  slurm_elapsed_seconds: 99
+  terachem_processing_seconds: 89.24
+  status: completed
+
+result:
+  scf_iterations: 18
+  final_energy_hartree: -7549.8437448573
+  final_energy_change_hartree: -9.0e-10
+  final_diis_error: 3.740e-7
+  homo_lumo_gap_ev: 5.381
+  note: >-
+    This is an absolute QM/MM energy for this partition and snapshot; comparisons
+    are most interpretable when composition, QM region and computational settings
+    are held fixed.
+
+files:
+  terachem_input: tc.in
+  amber_topology: system.parm7
+  coordinates: frame.rst7
+  qm_indices: region.qm
+  inspection_structure: system.pdb
+  full_output: tc.out
+  compact_result: results.dat
+  qm_region_image: qm_region.png

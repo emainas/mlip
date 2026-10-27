@@ -16,6 +16,9 @@ class SlurmJobConfig:
     time: str
     stdout: str
     stderr: str
+    gres: Optional[str] = None
+    cpus_per_task: Optional[int] = None
+    qos: Optional[str] = None
 
 
 @dataclass
@@ -232,6 +235,15 @@ def write_slurm_sh(cfg: MDEquilConfig, out_dir: Path) -> Optional[Path]:
     job = cfg.slurm.job
     sh_path = out_dir / "slurm.sh"
 
+    optional_directives = []
+    if job.gres:
+        optional_directives.append(f"#SBATCH --gres={job.gres}")
+    if job.cpus_per_task:
+        optional_directives.append(f"#SBATCH --cpus-per-task={job.cpus_per_task}")
+    if job.qos:
+        optional_directives.append(f"#SBATCH --qos={job.qos}")
+    optional_block = "\n".join(optional_directives)
+
     text = f"""\
 #!/usr/bin/env bash
 #SBATCH -J {job.name}
@@ -240,6 +252,7 @@ def write_slurm_sh(cfg: MDEquilConfig, out_dir: Path) -> Optional[Path]:
 #SBATCH -t {job.time}
 #SBATCH -o {job.stdout}
 #SBATCH -e {job.stderr}
+{optional_block}
 
 bash run.sh
 """
@@ -312,4 +325,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

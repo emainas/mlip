@@ -16,8 +16,9 @@ mlip --help
 1. `prep` — build the solvated system with AmberTools/tleap
 2. `mdequil` — equilibrate with classical force field (optional)
 3. `salt` — adjust ions / hydroxide (optional)
-4. `mlip-prep` — prepare MLIP runs
-5. `mlip-submit` — submit MLIP runs to Slurm
+4. `orb-prep` — prepare ORB runs
+5. `orb-submit` — submit ORB runs to Slurm
+6. `plumed-cv` — write `plumed.dat` in per-run CV dirs (optional)
 
 ## Design Notes
 

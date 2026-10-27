@@ -1,1 +1,6 @@
 pyyaml
+ase
+
+[docs]
+mkdocs
+mkdocs-material
